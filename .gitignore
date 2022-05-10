@@ -1,0 +1,13 @@
+**/build/**
+/build/
+**/build/
+/build/**
+build/
+**/lib/**
+/lib/
+/lib/**
+**/lib/
+**/bin/**
+/bin/
+/bin/**
+**/bin/

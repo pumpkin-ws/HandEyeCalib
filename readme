@@ -1,0 +1,12 @@
+手眼标定提供的接口:
+The interfaces provided by hand-eye calibration tool set:
+
+1 - 相机内参标定工具
+Tools for calibrating camera intrinsics
+2 - 眼在手上标定
+Tools for eye in hand calibration
+3 - 眼在手外标定
+Tools for eye to hand calibration
+
+需要OpenCV版本>4
+Need OpenCV version > 4
