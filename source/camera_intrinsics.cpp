@@ -61,23 +61,23 @@ namespace sparkvis{
                     LOG_RED("ONLY SUPPORT PNG AND JPG IMAGES. OR THE DIRECTORY DOES NOT CONTIAN IMAGES");
                     return false;
                 } else {
-                    LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
+                    LOG_GREEN("IMAGE NAMES LOADED SUCCESSFULLY");
                 }
             }
-            LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
             if (img_names.size() < 4) {
                 LOG_RED("NEED AT LEAST 4 IMAGES IN THE DIRECTORY");
                 return false;
             }
             for (int i = 0; i < img_names.size(); i++) {
                 try{
-                    cv::Mat img = cv::imread(img_names[i]);
-                    m_intrinsic_imgs.push_back(img);
+                    cv::Mat img = cv::imread(dir + "/" + img_names[i]);
+                    m_intrinsic_imgs.push_back(img.clone());
                 } catch (cv::Exception& e) {
                     LOG_RED(e.what());
                     return false;
                 }
             }
+            LOG_GREEN("IMAGES LOADED SUCCESSFULLY");
             /* Check images for consistent size */
             cv::Size img_size = m_intrinsic_imgs[0].size();
             for (auto img : m_intrinsic_imgs) {
@@ -283,4 +283,14 @@ namespace sparkvis{
         return false;
     };
 
+    bool CamCalib::setResultDir(std::string dir) {
+        if(!checkDirectoryExists(dir)) {
+            LOG_BLUE("DIRECTOR DOES NOT EXIST, RESULT WILL BE SAVED IN %s", m_result_dir.c_str());
+            return false;
+        } else {
+            m_result_dir = dir;
+            LOG_GREEN("RESULT DIRECTORY CHANGED TO: %s", m_result_dir.c_str());
+            return true;
+        }
+    }
 }

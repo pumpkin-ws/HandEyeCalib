@@ -53,10 +53,9 @@ public:
         const float& board_dim,
         const Pattern& p
     );
-    bool validateResult();
     bool findBoardPose(
         const cv::Size& board_size, 
-        const float& pattern_dim, 
+        const float& board_dim, 
         const std::vector<cv::Point2f>& tracked_centers,
         const cv::Mat& camera_matrix,
         const cv::Mat& dist_coeffs,
@@ -68,7 +67,7 @@ public:
     
     bool findPattern (
         const cv::Mat& input, 
-        const cv::Size& grid_size, 
+        const cv::Size& board_size, 
         const Pattern& p, 
         std::vector<cv::Point2f>& centers_output, 
         bool draw_result=false
@@ -77,8 +76,9 @@ public:
 private:
     std::vector<cv::Mat> m_input_imgs;
     std::vector<RobotPose> m_robot_poses;
-    cv::Mat m_R_camera2gripper;
-    cv::Mat m_t_camera2gripper;
+    std::vector<cv::Mat> m_target2base;
+    cv::Mat m_R_camera2gripper; // rotation result
+    cv::Mat m_t_camera2gripper; // translation result
     cv::Mat m_intrinsics; // the camera intrinsics
     cv::Mat m_distortion; // the distortion coefficients
     cv::Size m_expect_size;

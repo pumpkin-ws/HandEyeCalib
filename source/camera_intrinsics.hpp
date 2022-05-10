@@ -49,7 +49,7 @@ public:
     CamCalib& operator=(CamCalib&& rhs);
 
     friend std::ostream& operator<< (std::ostream &os, CamCalib &cc) {
-        if (cc.m_calib_performed == true) {
+        if (!cc.m_calib_performed) {
             os << "Calibration is not performed yet. Perform calibration to see result." << std::endl;
             return os;
         } else {
@@ -74,7 +74,7 @@ public:
     enum class Pattern {CHESSBOARD, SYMCIRCLE, ASYMCIRCLE};
     bool findPattern (const cv::Mat& input, const cv::Size& grid_size, const Pattern& p, std::vector<cv::Point2f>& centers_output, bool draw_result=false);
     bool calibrateIntrinsics (const Pattern& p, const cv::Size& grid_size, double pattern_dim, cv::Mat& camera_mat, cv::Mat& distortion, std::vector<cv::Mat>& rvecs_out, std::vector<cv::Mat>& tvecs_out, bool save_result=false);
-    
+    bool setResultDir(std::string dir);
 private:
     std::vector<cv::Mat> m_intrinsic_imgs;
     cv::Mat m_intrinsics, m_distortion;

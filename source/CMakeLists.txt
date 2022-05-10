@@ -3,6 +3,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SparkHandEye_SOURCE_DIR}/lib/)
 
+find_package(Boost REQUIRED filesystem)
+
 add_library(
     sparkvis SHARED
     camera_intrinsics.hpp
@@ -15,5 +17,5 @@ add_library(
     file_manip.cpp
 )
 
-target_link_libraries(sparkvis ${OpenCV_LIBS})
+target_link_libraries(sparkvis ${OpenCV_LIBS} ${Boost_LIBRARIES})
 

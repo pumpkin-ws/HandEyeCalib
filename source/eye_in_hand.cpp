@@ -15,10 +15,10 @@ namespace sparkvis {
 
     };
     EIHCalibrator& EIHCalibrator::operator=(const EIHCalibrator& rhs) {
-
+        return *this;
     };
     EIHCalibrator& EIHCalibrator::operator=(EIHCalibrator&& rhs) {
-
+        return *this;
     };
 
     bool EIHCalibrator::loadImages(std::string dir) {
@@ -41,20 +41,21 @@ namespace sparkvis {
                     LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
                 }
             }
-            LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
+
             if (img_names.size() < 4) {
                 LOG_RED("NEED AT LEAST 4 IMAGES IN THE DIRECTORY");
                 return false;
             }
             for (int i = 0; i < img_names.size(); i++) {
                 try{
-                    cv::Mat img = cv::imread(img_names[i]);
+                    cv::Mat img = cv::imread(dir + "/" + img_names[i]);
                     m_input_imgs.push_back(img);
                 } catch (cv::Exception& e) {
                     LOG_RED(e.what());
                     return false;
                 }
             }
+            LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
             /* Check images for consistent size */
             cv::Size img_size = m_input_imgs[0].size();
             for (auto img : m_input_imgs) {
@@ -102,6 +103,7 @@ namespace sparkvis {
                 }
             }
             fs.release();
+            LOG_GREEN("ROBOT POSES LOADED SUCCESSFULLY");
             return true;
         } catch(cv::Exception& e) {
             m_robot_poses.clear();
@@ -132,6 +134,7 @@ namespace sparkvis {
             fs["Distortion"] >> m_distortion;
             fs["ImageSize"] >> m_expect_size;
             fs.release();
+            LOG_GREEN("CAMERA PARAMETERS LOADED SUCCESSFULLY");
             return true;
         } catch (cv::Exception& e) {
             LOG_RED(e.what());
@@ -167,10 +170,11 @@ namespace sparkvis {
     };
 
     std::vector<double> EIHCalibrator::RobotPose::getPose(std::string rot_rep) {
+        return std::vector<double>();
     }
     
     std::vector<double> EIHCalibrator::RobotPose::getPoseRPY(std::string rot_order) {
-
+        return std::vector<double>();
     }
 
     Eigen::Isometry3f EIHCalibrator::RobotPose::getHomoPose() {
@@ -190,7 +194,7 @@ namespace sparkvis {
         const Pattern& p
     ) {
         if (!loadImages(img_dir)) {
-            LOG_RED("UNABLE TO LAOD IMAGES");
+            LOG_RED("UNABLE TO LOAD IMAGES");
             return false;
         }
         if (!loadPoses(pose_dir)) {
@@ -209,15 +213,88 @@ namespace sparkvis {
             LOG_RED("NUMBER OF IMAGES NEEDS TO AGREE WITH NUMBER OF POSES");
             return false;
         }
+        std::vector<cv::Mat> R_target2cam, t_target2cam;
+        
+
         for (int i = 0; i < m_input_imgs.size(); i++) {
-            
+            std::vector<cv::Point2f> centers_output;
+            cv::Mat rvec, tvec;
+            try{
+                if (!findPattern(m_input_imgs[i], board_size, p, centers_output)) {
+                    LOG_RED("CANNOT FIND PATTERN FOR IMAGE %i", i);
+                    return false;
+                }
+                if (!findBoardPose(board_size, board_dim, centers_output, m_intrinsics, m_distortion, rvec, tvec)) {
+                    LOG_RED("CANNOT CALCULATE BOARD POSE");
+                    return false;
+                }
+                cv::Mat rot;
+                cv::Rodrigues(rvec, rot);
+                R_target2cam.push_back(rot);
+                t_target2cam.push_back(tvec);
+            } catch (cv::Exception& e) {
+                LOG_RED(e.what());
+                return false;
+            } catch (std::exception& e) {
+                LOG_RED(e.what());
+                return false;
+            }
+        }
+
+        std::vector<cv::Mat> R_gripper2base, t_gripper2base;
+        for (int i = 0; i < m_robot_poses.size(); i++) {
+            Eigen::Isometry3f pose = m_robot_poses[i].getHomoPose();
+            Eigen::Matrix3f rot_mat = pose.rotation();
+            cv::Mat rot = (cv::Mat_<double>(3, 3) << rot_mat(0, 0), rot_mat(0, 1), rot_mat(0, 2),
+                                                    rot_mat(1, 0), rot_mat(1, 1), rot_mat(1, 2),
+                                                    rot_mat(2, 0), rot_mat(2, 1), rot_mat(2, 2));
+            Eigen::Vector3f trans_mat = pose.translation();
+            cv::Mat trans = (cv::Mat_<double>(3, 1) << trans_mat(0), trans_mat(1), trans_mat(2));
+            R_gripper2base.push_back(rot);
+            t_gripper2base.push_back(trans);
+        }
+
+        try{
+            cv::calibrateHandEye(
+                R_gripper2base,
+                t_gripper2base,
+                R_target2cam,
+                t_target2cam,
+                m_R_camera2gripper,
+                m_t_camera2gripper,
+                cv::CALIB_HAND_EYE_TSAI
+            );
+
+            // perform calibration verfication here
+            auto RT2Homo = [](cv::Mat R, cv::Mat t)->cv::Mat{
+                cv::Mat homo = (cv::Mat_<double>(4, 4) << R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2), t.at<double>(0, 0), 
+                                                          R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2), t.at<double>(1, 0),
+                                                          R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2), t.at<double>(2, 0),
+                                                          0.0               , 0.0               , 0.0               , 1.0);
+                return homo;
+            };
+            m_target2base.clear();
+            cv::Mat H_c2g = RT2Homo(m_R_camera2gripper, m_t_camera2gripper);
+            for (int i = 0; i < R_gripper2base.size(); i++) {
+                cv::Mat H_g2b = RT2Homo(R_gripper2base[i], t_gripper2base[i]);
+                cv::Mat H_t2c = RT2Homo(R_target2cam[i], t_target2cam[i]);
+                cv::Mat H_t2b = H_g2b * H_c2g * H_t2c;
+                m_target2base.push_back(H_t2b);
+            }
+            return true;
+        } catch (cv::Exception& e) {
+            LOG_RED(e.what());
+            return false;
+        } catch (std::exception& e) {
+            LOG_RED(e.what());
+            return false;
         }
         
     };
 
     bool EIHCalibrator::findBoardPose(
         const cv::Size& board_size, 
-        const float& pattern_dim, 
+        const float& board_dim, 
         const std::vector<cv::Point2f>& tracked_centers,
         const cv::Mat& camera_matrix,
         const cv::Mat& dist_coeffs,
@@ -228,7 +305,7 @@ namespace sparkvis {
         std::vector<cv::Point3f> object_points;
         for (int i = 0; i < board_size.height; i++) {
             for (int j = 0; j < board_size.width; j++) {
-                object_points.emplace_back(i*pattern_dim, j*pattern_dim, 0);
+                object_points.emplace_back(i*board_dim, j*board_dim, 0);
             }
         }
 
@@ -257,7 +334,7 @@ namespace sparkvis {
 
     bool EIHCalibrator::findPattern(
         const cv::Mat& input, 
-        const cv::Size& grid_size, 
+        const cv::Size& board_size, 
         const Pattern& p, 
         std::vector<cv::Point2f>& centers_output, 
         bool draw_result
@@ -266,7 +343,7 @@ namespace sparkvis {
         switch(p) {
             case Pattern::CHESSBOARD : {
                 cv::Mat track_result;
-                bool pattern_found = cv::findChessboardCorners(input, grid_size, centers_output);
+                bool pattern_found = cv::findChessboardCorners(input, board_size, centers_output);
                 if (!pattern_found) {
                     LOG_RED("UNABLE TO FIND CHESSBOARD PATTERN");
                     cv::imshow("Track Failed", input);
@@ -286,7 +363,7 @@ namespace sparkvis {
                     );
                     if (draw_result == true) {
                         cv::Mat display = input.clone();
-                        cv::drawChessboardCorners(display, grid_size, centers_output, pattern_found);
+                        cv::drawChessboardCorners(display, board_size, centers_output, pattern_found);
                         cv::imshow("Found corners", display);
                         cv::waitKey(0);
                         cv::destroyWindow("Found corners");
@@ -298,7 +375,7 @@ namespace sparkvis {
             }
             case Pattern::SYMCIRCLE : {
                 cv::Mat track_result;
-                bool pattern_found = cv::findCirclesGrid(input, grid_size, track_result);
+                bool pattern_found = cv::findCirclesGrid(input, board_size, track_result);
                 if (!pattern_found) {
                     LOG_RED("UNABLE TO FIND CIRCLE GRID PATTERN");
                     cv::imshow("Track Failed", input);
@@ -311,7 +388,7 @@ namespace sparkvis {
                         centers_output.push_back(track_result.at<cv::Point2f>(0, i));
                     }
                     if (draw_result == true) {
-                        cv::drawChessboardCorners(display, grid_size, centers_output, pattern_found);
+                        cv::drawChessboardCorners(display, board_size, centers_output, pattern_found);
                         cv::imshow("Found circles", display);
                         cv::waitKey(0);
                         cv::destroyWindow("Found circles");
@@ -327,5 +404,7 @@ namespace sparkvis {
                 break;
             }
         }
+        return true;
     }
+
 }

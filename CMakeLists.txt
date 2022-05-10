@@ -6,6 +6,9 @@ enable_testing()
 
 find_package(OpenCV 4 REQUIRED)
 
+link_directories(${PROJECT_SOURCE_DIR}/lib/)
+include_directories(${PROJECT_SOURCE_DIR}/source/)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/source/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/examples/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/validations/)

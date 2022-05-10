@@ -11,3 +11,6 @@ target_link_libraries(rot_vec ${OpenCV_LIBS})
 
 add_executable(eigen_test eigen_test.cpp)
 target_link_libraries(eigen_test ${OpenCV_LIBS})
+
+add_executable(convert_pose convert_pose.cpp)
+target_link_libraries(convert_pose ${OpenCV_LIBS})
