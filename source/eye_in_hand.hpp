@@ -16,7 +16,8 @@ public:
     EIHCalibrator(EIHCalibrator&& rhs);
     EIHCalibrator& operator=(const EIHCalibrator& rhs);
     EIHCalibrator& operator=(EIHCalibrator&& rhs);
-    
+
+    enum class Pattern {CHESSBOARD, SYMCIRCLE, ASYMCIRCLE};
     class RobotPose {
     public:
         void updateTrans(double x, double y, double z);
@@ -40,15 +41,47 @@ public:
         bool is_trans_set{false};
         bool is_rot_set{false};
     };
-
     
     bool loadImages(std::string dir);
     bool loadPoses(std::string dir);
-    bool calibrateHandEye(cv::Mat& R_camera2gripper, cv::Mat& t_camera2gripper);
+    bool loadCamParams(std::string dir);
+    bool calibrateHandEye(
+        const std::string& img_dir, 
+        const std::string& cam_params_dir, 
+        const std::string& pose_dir, 
+        const cv::Size& board_size, 
+        const float& board_dim,
+        const Pattern& p
+    );
     bool validateResult();
+    bool findBoardPose(
+        const cv::Size& board_size, 
+        const float& pattern_dim, 
+        const std::vector<cv::Point2f>& tracked_centers,
+        const cv::Mat& camera_matrix,
+        const cv::Mat& dist_coeffs,
+        cv::Mat& rvec,
+        cv::Mat& tvec
+    );
+    Eigen::Isometry3f getCalibResult();
+
+    
+    bool findPattern (
+        const cv::Mat& input, 
+        const cv::Size& grid_size, 
+        const Pattern& p, 
+        std::vector<cv::Point2f>& centers_output, 
+        bool draw_result=false
+    );
+
 private:
     std::vector<cv::Mat> m_input_imgs;
     std::vector<RobotPose> m_robot_poses;
+    cv::Mat m_R_camera2gripper;
+    cv::Mat m_t_camera2gripper;
+    cv::Mat m_intrinsics; // the camera intrinsics
+    cv::Mat m_distortion; // the distortion coefficients
+    cv::Size m_expect_size;
 };
 }
 
