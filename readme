@@ -10,3 +10,16 @@ Tools for eye to hand calibration
 
 需要OpenCV版本>4
 Need OpenCV version > 4
+
+开发需求：
+
+软件的使用方法暂时可以参考在example里的例程，更详细的说明文档以后会提供。
+
+所有的软件接口都定义在sparkvis命名空间里面。
+
+内参标定的使用说明：
+
+
+眼在手上标定的使用说明：
+
+眼在手外标定的使用说明：
