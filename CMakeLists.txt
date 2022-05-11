@@ -16,6 +16,16 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/validations/)
 add_executable(SparkHandEye main.cpp)
 target_link_libraries(SparkHandEye spk ${OpenCV_LIBS})
 
+install(TARGETS sparkvis
+LIBRARY DESTINATION /usr/lib/
+)
+
+install(
+    DIRECTORY source/
+    DESTINATION /usr/include/sparkvis/
+    FILES_MATCHING PATTERN "*.hpp"
+)
+
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
