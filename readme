@@ -11,15 +11,39 @@ Tools for eye to hand calibration
 需要OpenCV版本>4
 Need OpenCV version > 4
 
-开发需求：
+需要Boost的filesystem模块，安装boost模块的方法可以通过在
+
+程序的安装：
+程序的安装和一般的cmake项目安装方式相同，在程序根目录下创建build文件夹，在build文件夹中打开终端。
+在终端输入以下指令：
+    cmake ..
+    make -j12
+    sudo make install
+    （输入用户密码）
+运行包会被安装到/usr/lib/libsparkvis.so
+运行头文件会被安装到/usr/include/sparkvis/*.hpp里面 
+如果需要删除库，可以将以上的文件和文件夹删除就可以了
+
+安装完成后构造cmake工程，使用target_link_libraries去链接sparkvis
+或者是可以直接使用g++ -lsparkvis
 
 软件的使用方法暂时可以参考在example里的例程，更详细的说明文档以后会提供。
 
 所有的软件接口都定义在sparkvis命名空间里面。
 
 内参标定的使用说明：
-内参标定需要
+内参标定
+1 - 构造CamCalib对象
+sparkvis::CamCalib cc;
+2 - 导入图片
+cc.loadImages("<DirectoryName>");
+3 - 设置结果路径，会被保存的结果包括了
+cc.setResultDir("<DirectoryName>");
+4 - 
+
 
 眼在手上标定的使用说明：
 
 眼在手外标定的使用说明：
+
+后续开发需求：
