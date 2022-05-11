@@ -108,7 +108,7 @@ namespace sparkvis {
         } catch(cv::Exception& e) {
             m_robot_poses.clear();
             LOG_RED(e.what());
-            fs.release();
+            fs.release();`
             return false;
         } catch(std::exception& e) {
             m_robot_poses.clear();
