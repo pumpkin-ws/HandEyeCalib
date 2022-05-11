@@ -57,7 +57,9 @@ int main(int argc, char** argv) {
         return rp;
     };
 
-    std::ifstream f("location.txt");
+    std::string filename;
+    std::getline(std::cin, filename);
+    std::ifstream f(filename);
     std::string cur_line;
 
     std::vector<RobotPose> poses;

@@ -55,7 +55,7 @@ namespace sparkvis {
                     return false;
                 }
             }
-            LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
+            LOG_GREEN("%d IMAGE LOADED SUCCESSFULLY", m_input_imgs.size());
             /* Check images for consistent size */
             cv::Size img_size = m_input_imgs[0].size();
             for (auto img : m_input_imgs) {
@@ -103,12 +103,12 @@ namespace sparkvis {
                 }
             }
             fs.release();
-            LOG_GREEN("ROBOT POSES LOADED SUCCESSFULLY");
+            LOG_GREEN("%d ROBOT POSES LOADED SUCCESSFULLY", num_of_poses);
             return true;
         } catch(cv::Exception& e) {
             m_robot_poses.clear();
             LOG_RED(e.what());
-            fs.release();`
+            fs.release();
             return false;
         } catch(std::exception& e) {
             m_robot_poses.clear();
@@ -191,7 +191,9 @@ namespace sparkvis {
         const std::string& pose_dir,
         const cv::Size& board_size, 
         const float& board_dim,
-        const Pattern& p
+        const std::string& dist_unit,
+        const Pattern& p,
+        bool save_result
     ) {
         if (!loadImages(img_dir)) {
             LOG_RED("UNABLE TO LOAD IMAGES");
@@ -275,12 +277,37 @@ namespace sparkvis {
             };
             m_target2base.clear();
             cv::Mat H_c2g = RT2Homo(m_R_camera2gripper, m_t_camera2gripper);
+            m_Homo_camera2gripper = H_c2g;
             for (int i = 0; i < R_gripper2base.size(); i++) {
                 cv::Mat H_g2b = RT2Homo(R_gripper2base[i], t_gripper2base[i]);
                 cv::Mat H_t2c = RT2Homo(R_target2cam[i], t_target2cam[i]);
                 cv::Mat H_t2b = H_g2b * H_c2g * H_t2c;
                 m_target2base.push_back(H_t2b);
             }
+
+            /* Save result */
+            time(&m_rawtime);
+            m_time_of_calib = asctime(localtime(&m_rawtime));
+
+            if (save_result == true) {
+                cv::FileStorage fs_eih(m_result_dir + "/" + "eih_result.yml", cv::FileStorage::WRITE);
+                fs_eih << "CalibrationTime" << m_time_of_calib;
+                fs_eih << "DistanceUnit" << dist_unit;
+                fs_eih << "Cam2Gripper_Rot" << m_R_camera2gripper;
+                fs_eih << "Cam2Gripper_Trans" << m_t_camera2gripper;
+                fs_eih << "Cam2Gripper_Homo" << H_c2g;
+                fs_eih.release();
+
+                cv::FileStorage fs_t2b(m_result_dir + "/" + "t2b_result.yml", cv::FileStorage::WRITE);
+                fs_t2b << "CalibrationTime" << m_time_of_calib;
+                fs_t2b << "DistanceUnit" << dist_unit;
+                for (int i = 0; i < m_target2base.size(); i++) {
+                    std::string pose_name = "pose" + std::to_string(i + 1);
+                    fs_t2b << pose_name << m_target2base[i];
+                }
+                fs_t2b.release();
+            }
+            m_calib_performed = true;
             return true;
         } catch (cv::Exception& e) {
             LOG_RED(e.what());
@@ -407,4 +434,14 @@ namespace sparkvis {
         return true;
     }
 
+    bool EIHCalibrator::setResultDir(std::string dir) {
+        if(!checkDirectoryExists(dir)) {
+            LOG_BLUE("DIRECTOR DOES NOT EXIST, RESULT WILL BE SAVED IN %s", m_result_dir.c_str());
+            return false;
+        } else {
+            m_result_dir = dir;
+            LOG_GREEN("RESULT DIRECTORY CHANGED TO: %s", m_result_dir.c_str());
+            return true;
+        }
+    }
 }

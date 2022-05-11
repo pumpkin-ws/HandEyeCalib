@@ -37,24 +37,22 @@ namespace sparkvis {
                 if (img_names.empty()) {
                     LOG_RED("ONLY SUPPORT PNG AND JPG IMAGES. OR THE DIRECTORY DOES NOT CONTIAN IMAGES");
                     return false;
-                } else {
-                    LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
                 }
             }
-            LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
             if (img_names.size() < 4) {
                 LOG_RED("NEED AT LEAST 4 IMAGES IN THE DIRECTORY");
                 return false;
             }
             for (int i = 0; i < img_names.size(); i++) {
                 try{
-                    cv::Mat img = cv::imread(img_names[i]);
+                    cv::Mat img = cv::imread(dir + "/" + img_names[i]);
                     m_input_imgs.push_back(img);
                 } catch (cv::Exception& e) {
                     LOG_RED(e.what());
                     return false;
                 }
             }
+            LOG_GREEN("IMAGE LOADED SUCCESSFULLY");
             /* Check images for consistent size */
             cv::Size img_size = m_input_imgs[0].size();
             for (auto img : m_input_imgs) {
@@ -187,7 +185,9 @@ namespace sparkvis {
         const std::string& pose_dir,
         const cv::Size& board_size, 
         const float& board_dim,
-        const Pattern& p
+        const std::string& dist_unit,
+        const Pattern& p,
+        bool save_result
     ) {
         if (!loadImages(img_dir)) {
             LOG_RED("UNABLE TO LAOD IMAGES");
@@ -210,7 +210,6 @@ namespace sparkvis {
             return false;
         }
         std::vector<cv::Mat> R_target2cam, t_target2cam;
-        
 
         for (int i = 0; i < m_input_imgs.size(); i++) {
             std::vector<cv::Point2f> centers_output;
@@ -272,12 +271,34 @@ namespace sparkvis {
             };
             m_target2gripper.clear();
             cv::Mat H_c2b = RT2Homo(m_R_camera2base, m_t_camera2base);
+            m_Homo_camera2base = H_c2b;
             for (int i = 0; i < R_base2gripper.size(); i++) {
                 cv::Mat H_b2g = RT2Homo(R_base2gripper[i], t_base2gripper[i]);
                 cv::Mat H_t2c = RT2Homo(R_target2cam[i], t_target2cam[i]);
                 cv::Mat H_t2g= H_b2g * H_c2b * H_t2c;
                 m_target2gripper.push_back(H_t2g);
             }
+            time(&m_rawtime);
+            m_time_of_calib = asctime(localtime(&m_rawtime));
+            if (save_result == true) {
+                cv::FileStorage fs_eth(m_result_dir + "/" + "eth_result.yml", cv::FileStorage::WRITE);
+                fs_eth << "CalibrationTime" << m_time_of_calib;
+                fs_eth << "DistanceUnit" << dist_unit;
+                fs_eth << "Cam2Gripper_Rot" << m_R_camera2base;
+                fs_eth << "Cam2Gripper_Trans" << m_t_camera2base;
+                fs_eth << "Cam2Gripper_Homo" << H_c2b;
+                fs_eth.release();
+
+                cv::FileStorage fs_t2g(m_result_dir + "/" + "t2b_result.yml", cv::FileStorage::WRITE);
+                fs_t2g << "CalibrationTime" << m_time_of_calib;
+                fs_t2g << "DistanceUnit" << dist_unit;
+                for (int i = 0; i < m_target2gripper.size(); i++) {
+                    std::string pose_name = "pose" + std::to_string(i + 1);
+                    fs_t2g << pose_name << m_target2gripper[i];
+                }
+                fs_t2g.release();
+            }
+            m_calib_performed = true;
             return true;
         } catch (cv::Exception& e) {
             LOG_RED(e.what());
@@ -400,6 +421,17 @@ namespace sparkvis {
                 return false;
                 break;
             }
+        }
+    }
+
+    bool ETHCalibrator::setResultDir(std::string dir) {
+        if(!checkDirectoryExists(dir)) {
+            LOG_BLUE("DIRECTOR DOES NOT EXIST, RESULT WILL BE SAVED IN %s", m_result_dir.c_str());
+            return false;
+        } else {
+            m_result_dir = dir;
+            LOG_GREEN("RESULT DIRECTORY CHANGED TO: %s", m_result_dir.c_str());
+            return true;
         }
     }
 

@@ -51,7 +51,9 @@ public:
         const std::string& pose_dir, 
         const cv::Size& board_size, 
         const float& board_dim,
-        const Pattern& p
+        const std::string& dist_unit,
+        const Pattern& p,
+        bool save_result = true
     );
     bool findBoardPose(
         const cv::Size& board_size, 
@@ -63,6 +65,7 @@ public:
         cv::Mat& tvec
     );
     Eigen::Isometry3f getCalibResult();
+    bool setResultDir(std::string dir);
 
     bool findPattern (
         const cv::Mat& input, 
@@ -72,15 +75,34 @@ public:
         bool draw_result=false
     );
 
+    friend std::ostream& operator << (std::ostream& os, ETHCalibrator& eth) {
+        if (!eth.m_calib_performed) {
+            os << "Calibration is not performed yet." << std::endl;
+            return os;
+        } else {
+            os << "\033[1;32m------Camera Calibration Result------\033[0m\n";
+            os << "Date of calibration: " << eth.m_time_of_calib << std::endl;
+            os << "The camera to gripper homography matrix is: " << std::endl;
+            os << eth.m_Homo_camera2base << std::endl;
+            os << "\033[1;32m------Camera Calibration Result------\033[0m\n";
+            return os;
+        }        
+    }
+
 private:
     std::vector<cv::Mat> m_input_imgs;
     std::vector<RobotPose> m_robot_poses;
     std::vector<cv::Mat> m_target2gripper;
     cv::Mat m_R_camera2base; // rotation result
     cv::Mat m_t_camera2base; // translation result
+    cv::Mat m_Homo_camera2base; // the homography matrix for camera to gripper transformation
     cv::Mat m_intrinsics; // the camera intrinsics
     cv::Mat m_distortion; // the distortion coefficients
     cv::Size m_expect_size;
+    std::string m_result_dir{"./"};
+    time_t m_rawtime;
+    char* m_time_of_calib;
+    bool m_calib_performed {false};
 };
 }
 
