@@ -37,9 +37,9 @@ Need OpenCV version > 4
 sparkvis::CamCalib cc;
 2 - 导入图片
 cc.loadImages("<DirectoryName>");
-3 - 设置结果路径，会被保存的结果包括了
+3 - 设置结果路径，会被保存的结果包括了图像的内参，图像的畸变系数，标定板在不同图像中的姿态
 cc.setResultDir("<DirectoryName>");
-4 - 
+4 - 调用标定程序，传入变量保存
 
 
 眼在手上标定的使用说明：
