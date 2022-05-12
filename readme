@@ -22,7 +22,7 @@ Need OpenCV version > 4
     （输入用户密码）
 运行包会被安装到/usr/lib/libsparkvis.so
 运行头文件会被安装到/usr/include/sparkvis/*.hpp里面 
-如果需要删除库，可以将以上的文件和文件夹删除就可以了
+如果需要删除库，可以将以上的文件和文件夹删除就可以了（sudo rm 和 sudo rm -rf *）:)
 
 安装完成后构造cmake工程，使用target_link_libraries去链接sparkvis
 或者是可以直接使用g++ -lsparkvis
@@ -32,6 +32,7 @@ Need OpenCV version > 4
 所有的软件接口都定义在sparkvis命名空间里面。
 
 内参标定的使用说明：
+
 内参标定
 1 - 构造CamCalib对象
 sparkvis::CamCalib cc;
@@ -40,9 +41,16 @@ cc.loadImages("<DirectoryName>");
 3 - 设置结果路径，会被保存的结果包括了图像的内参，图像的畸变系数，标定板在不同图像中的姿态
 cc.setResultDir("<DirectoryName>");
 4 - 调用标定程序，传入变量保存
-
+cc.calibrateIntrinsics(<Pattern>, <Size of board>, <characteristic dimensions>, <intrinsics mat>, <distortion mat>, <rotation vecs>, <translation vecs>);
+Pattern - 标定板图案，包括了棋盘格，对称圆与非对称圆
+Characteristic dimensions - 特征尺寸，对棋盘格而言，是每个格子的边长；对对称圆来说，是圆心与圆心之间的距离
+intrinsic mat - 存储内参矩阵的cv::Mat
+distortion mat - 存储畸变系数的cv::Mat
+rotation vecs - 存储每一幅图片中标定板旋转向量
+translation vecs - 存储每一幅图片中标定板平移向量
 
 眼在手上标定的使用说明：
+1 - 
 
 眼在手外标定的使用说明：
 
