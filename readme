@@ -40,7 +40,7 @@ sparkvis::CamCalib cc;
 cc.loadImages("<DirectoryName>");
 3 - 设置结果路径，会被保存的结果包括了图像的内参，图像的畸变系数，标定板在不同图像中的姿态
 cc.setResultDir("<DirectoryName>");
-4 - 调用标定程序，传入变量保存
+4 - 调用标定函数，传入变量保存
 cc.calibrateIntrinsics(<Pattern>, <Size of board>, <characteristic dimensions>, <intrinsics mat>, <distortion mat>, <rotation vecs>, <translation vecs>);
 Pattern - 标定板图案，包括了棋盘格，对称圆与非对称圆
 Characteristic dimensions - 特征尺寸，对棋盘格而言，是每个格子的边长；对对称圆来说，是圆心与圆心之间的距离
@@ -50,8 +50,17 @@ rotation vecs - 存储每一幅图片中标定板旋转向量
 translation vecs - 存储每一幅图片中标定板平移向量
 
 眼在手上标定的使用说明：
-1 - 
+1 - 创建EIHCalibrator对象
+sparkvis::EIHCalibrator eih;
+2 - 设置手眼标定结果存储路径
+eih.setResultDir(<DirectoryName>);
+3 - 调用calibrateHandEye函数
+eih.calibrateHandEye(<ImageDirectory>, <Camera Parameters>, <Robot Poses>, <Size of board>, <characteristic dimension>, <dimension unit>, <Calibration Pattern>);
+调用时需要在Image Directory里面准备好图片，目前程序可以接受的图片格式为.jpg或者是.png，图像的命名需要严格按照{<数字>_其他表示.文件格式}去存储，这样才可以保证保存的文件按制定顺序读入。
+机器人的姿态存储在一个yml文件里面，用户需要直接改写文件夹里面的内容，现阶段只能输入旋转向量，因为旋转向量是唯一的，而且在大多数的示教器上都可以直接读出来。姿态存储时需要和图片一一对应
+注意：图片的数量一定要和机器人的数量一致，否则无法标定！
 
 眼在手外标定的使用说明：
+眼在手外的接口和眼在手上的接口基本一致，使用方法也基本相同。
 
 后续开发需求：
