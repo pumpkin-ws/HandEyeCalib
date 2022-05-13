@@ -22,7 +22,7 @@ Need OpenCV version > 4
     （输入用户密码）
 运行包会被安装到/usr/lib/libsparkvis.so
 运行头文件会被安装到/usr/include/sparkvis/*.hpp里面 
-如果需要删除库，可以将以上的文件和文件夹删除就可以了（sudo rm 和 sudo rm -rf *）:)
+如果需要删除库，可以将以上的文件和文件夹删除就可以了（sudo rm 和 sudo rm -rf *） : )
 
 安装完成后构造cmake工程，使用target_link_libraries去链接sparkvis
 或者是可以直接使用g++ -lsparkvis
