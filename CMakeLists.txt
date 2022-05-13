@@ -15,7 +15,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/examples/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/validations/)
 
 add_executable(SparkHandEye main.cpp)
-target_link_libraries(SparkHandEye spk ${OpenCV_LIBS})
+target_link_libraries(SparkHandEye ${OpenCV_LIBS})
 
 install(TARGETS sparkvis
 LIBRARY DESTINATION /usr/lib/

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "sparkws/spk.hpp"
+// #include "sparkvis/spk.hpp"
 #include "opencv2/opencv.hpp"
 
 #define LOG_RED(...) do {\
@@ -21,10 +21,7 @@
 }while(0)
 
 int main(int argc, char** argv) {
-    printHell();
-    // cv::Mat img(500, 500, CV_8UC1);
-    // cv::imshow("img", img);
-    // cv::waitKey();
+    
     std::cout << system("[ -d /usr ]") << std::endl;
     std::cout << system("echo hello world") << std::endl;
 
