@@ -3,6 +3,7 @@ project(SparkHandEye VERSION 0.1.0)
 
 include(CTest)
 enable_testing()
+add_compile_options(-std=c++14)
 
 find_package(OpenCV 4 REQUIRED)
 
