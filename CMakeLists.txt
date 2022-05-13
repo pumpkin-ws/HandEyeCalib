@@ -5,6 +5,8 @@ include(CTest)
 enable_testing()
 add_compile_options(-std=c++14)
 
+add_compile_options(-std=c++14)
+
 find_package(OpenCV 4 REQUIRED)
 
 link_directories(${PROJECT_SOURCE_DIR}/lib/)
