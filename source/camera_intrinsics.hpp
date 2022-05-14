@@ -72,11 +72,12 @@ public:
      */
     bool loadImages(std::string dir);
     enum class Pattern {CHESSBOARD, SYMCIRCLE, ASYMCIRCLE};
-    bool findPattern (const cv::Mat& input, const cv::Size& grid_size, const Pattern& p, std::vector<cv::Point2f>& centers_output, bool draw_result=false);
+    bool findPattern (const cv::Mat& input, const cv::Size& grid_size, const Pattern& p, const std::string& img_name, std::vector<cv::Point2f>& centers_output, bool draw_result=false);
     bool calibrateIntrinsics (const Pattern& p, const cv::Size& grid_size, double pattern_dim, cv::Mat& camera_mat, cv::Mat& distortion, std::vector<cv::Mat>& rvecs_out, std::vector<cv::Mat>& tvecs_out, bool save_result=false);
     bool setResultDir(std::string dir);
 private:
     std::vector<cv::Mat> m_intrinsic_imgs;
+    std::vector<std::string> m_img_names;
     cv::Mat m_intrinsics, m_distortion;
     time_t m_rawtime;
     char* m_time_of_calib;

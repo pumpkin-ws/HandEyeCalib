@@ -3,6 +3,7 @@
 #include "eigen3/Eigen/Core"
 #include "eigen3/Eigen/Dense"
 
+
 struct RobotPose{
     double x{0}, y{0}, z{0}, rx{0}, ry{0}, rz{0};
 };

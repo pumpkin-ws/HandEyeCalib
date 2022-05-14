@@ -23,18 +23,19 @@ namespace sparkvis {
 
     bool EIHCalibrator::loadImages(std::string dir) {
         m_input_imgs.clear();
+        m_img_names.clear();
         std::string checkDirCommand{"[ -d " + dir + " ]"}; 
         int dir_exist = system(checkDirCommand.c_str());
         if (dir_exist == 0) {
-            std::vector<std::string> img_names = getAllFileName(dir, ".png");
-            std::sort(img_names.begin(), img_names.end(), [](std::string name1, std::string name2)->bool {
+            m_img_names = getAllFileName(dir, ".png");
+            std::sort(m_img_names.begin(), m_img_names.end(), [](std::string name1, std::string name2)->bool {
                 int idx1 = atoi(name1.substr(0, name1.find_first_of('_')).c_str());
                 int idx2 = atoi(name2.substr(0, name2.find_first_of('_')).c_str());
                 return idx1 < idx2;
             });
-            if (img_names.empty()) {
-                img_names = getAllFileName(dir, ".jpg");
-                if (img_names.empty()) {
+            if (m_img_names.empty()) {
+                m_img_names = getAllFileName(dir, ".jpg");
+                if (m_img_names.empty()) {
                     LOG_RED("ONLY SUPPORT PNG AND JPG IMAGES. OR THE DIRECTORY DOES NOT CONTIAN IMAGES");
                     return false;
                 } else {
@@ -42,13 +43,13 @@ namespace sparkvis {
                 }
             }
 
-            if (img_names.size() < 4) {
+            if (m_img_names.size() < 4) {
                 LOG_RED("NEED AT LEAST 4 IMAGES IN THE DIRECTORY");
                 return false;
             }
-            for (int i = 0; i < img_names.size(); i++) {
+            for (int i = 0; i < m_img_names.size(); i++) {
                 try{
-                    cv::Mat img = cv::imread(dir + "/" + img_names[i]);
+                    cv::Mat img = cv::imread(dir + "/" + m_img_names[i]);
                     m_input_imgs.push_back(img);
                 } catch (cv::Exception& e) {
                     LOG_RED(e.what());
@@ -222,7 +223,7 @@ namespace sparkvis {
             std::vector<cv::Point2f> centers_output;
             cv::Mat rvec, tvec;
             try{
-                if (!findPattern(m_input_imgs[i], board_size, p, centers_output)) {
+                if (!findPattern(m_input_imgs[i], board_size, p, m_img_names[i], centers_output)) {
                     LOG_RED("CANNOT FIND PATTERN FOR IMAGE %i", i);
                     return false;
                 }
@@ -363,6 +364,7 @@ namespace sparkvis {
         const cv::Mat& input, 
         const cv::Size& board_size, 
         const Pattern& p, 
+        const std::string& img_name,
         std::vector<cv::Point2f>& centers_output, 
         bool draw_result
     ) {
@@ -373,9 +375,9 @@ namespace sparkvis {
                 bool pattern_found = cv::findChessboardCorners(input, board_size, centers_output);
                 if (!pattern_found) {
                     LOG_RED("UNABLE TO FIND CHESSBOARD PATTERN");
-                    cv::imshow("Track Failed", input);
+                    cv::imshow(img_name, input);
                     cv::waitKey(0);
-                    cv::destroyWindow("Track Failed");
+                    cv::destroyWindow(img_name);
                     return false;
                 } else {
                     // refine to subpixel accuracy

@@ -51,26 +51,27 @@ namespace sparkvis{
 
     bool CamCalib::loadImages(std::string dir) {
         m_intrinsic_imgs.clear();
+        m_img_names.clear();
         std::string checkDirCommand{"[ -d " + dir + " ]"}; 
         int dir_exist = system(checkDirCommand.c_str());
         if (dir_exist == 0) {
-            std::vector<std::string> img_names = getAllFileName(dir, ".png");
-            if (img_names.empty()) {
-                img_names = getAllFileName(dir, ".jpg");
-                if (img_names.empty()) {
+            m_img_names = getAllFileName(dir, ".png");
+            if (m_img_names.empty()) {
+                m_img_names = getAllFileName(dir, ".jpg");
+                if (m_img_names.empty()) {
                     LOG_RED("ONLY SUPPORT PNG AND JPG IMAGES. OR THE DIRECTORY DOES NOT CONTIAN IMAGES");
                     return false;
                 } else {
                     LOG_GREEN("IMAGE NAMES LOADED SUCCESSFULLY");
                 }
             }
-            if (img_names.size() < 4) {
+            if (m_img_names.size() < 4) {
                 LOG_RED("NEED AT LEAST 4 IMAGES IN THE DIRECTORY");
                 return false;
             }
-            for (int i = 0; i < img_names.size(); i++) {
+            for (int i = 0; i < m_img_names.size(); i++) {
                 try{
-                    cv::Mat img = cv::imread(dir + "/" + img_names[i]);
+                    cv::Mat img = cv::imread(dir + "/" + m_img_names[i]);
                     m_intrinsic_imgs.push_back(img.clone());
                 } catch (cv::Exception& e) {
                     LOG_RED(e.what());
@@ -95,17 +96,17 @@ namespace sparkvis{
         }
     };
 
-    bool CamCalib::findPattern(const cv::Mat& input, const cv::Size& grid_size, const Pattern& p, std::vector<cv::Point2f>& centers_output, bool draw_result) {
+    bool CamCalib::findPattern(const cv::Mat& input, const cv::Size& grid_size, const Pattern& p, const std::string& img_name, std::vector<cv::Point2f>& centers_output, bool draw_result) {
         centers_output.clear();
         switch(p) {
             case Pattern::CHESSBOARD : {
                 cv::Mat track_result;
                 bool pattern_found = cv::findChessboardCorners(input, grid_size, centers_output);
                 if (!pattern_found) {
-                    LOG_RED("UNABLE TO FIND CHESSBOARD PATTERN");
-                    cv::imshow("Track Failed", input);
+                    LOG_RED("UNABLE TO FIND CHESSBOARD PATTERN FOR %s", img_name.c_str());
+                    cv::imshow(img_name, input);
                     cv::waitKey(0);
-                    cv::destroyWindow("Track Failed");
+                    cv::destroyWindow(img_name);
                     return false;
                 } else {
                     // refine to subpixel accuracy
@@ -175,7 +176,7 @@ namespace sparkvis{
                 std::vector<std::vector<cv::Point2f>> center_lists;
                 std::vector<cv::Point2f> center_points;
                 for (int i = 0; i < m_intrinsic_imgs.size(); i++) {
-                    if (findPattern(m_intrinsic_imgs[i], grid_size, p, center_points)) {
+                    if (findPattern(m_intrinsic_imgs[i], grid_size, p, m_img_names[i], center_points)) {
                         center_lists.push_back(center_points);
                     } else {
                         LOG_RED("Find pattern failed.");
@@ -225,7 +226,7 @@ namespace sparkvis{
                 std::vector<std::vector<cv::Point2f>> center_lists;
                 std::vector<cv::Point2f> center_points;
                 for (int i = 0; i < m_intrinsic_imgs.size(); i++) {
-                    if (findPattern(m_intrinsic_imgs[i], grid_size, p, center_points)) {
+                    if (findPattern(m_intrinsic_imgs[i], grid_size, p, m_img_names[i], center_points)) {
                         center_lists.push_back(center_points);
                     } else {
                         LOG_RED("Find pattern failed.");

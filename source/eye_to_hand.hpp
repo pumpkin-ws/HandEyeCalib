@@ -71,6 +71,7 @@ public:
         const cv::Mat& input, 
         const cv::Size& board_size, 
         const Pattern& p, 
+        const std::string& img_name,
         std::vector<cv::Point2f>& centers_output, 
         bool draw_result=false
     );
@@ -91,6 +92,7 @@ public:
 
 private:
     std::vector<cv::Mat> m_input_imgs;
+    std::vector<std::string> m_img_names;
     std::vector<RobotPose> m_robot_poses;
     std::vector<cv::Mat> m_target2gripper;
     cv::Mat m_R_camera2base; // rotation result
